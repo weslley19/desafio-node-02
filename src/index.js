@@ -24,11 +24,9 @@ function checksExistsUserAccount(request, response, next) {
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
-  const { username } = request.headers;
+  const { user } = request;
 
-  const user = users.find(user => user.username === username);
-
-  if (!user.pro && user.todos.length > 10) {
+  if (!user.pro && user.todos.length >= 10) {
     return response.status(403).json({ error: 'Free user has reached its task limit.' })
   }
 
@@ -94,7 +92,7 @@ app.post('/todos', checksExistsUserAccount, checksCreateTodosUserAvailability, (
   const { user } = request;
 
   const newTodo = {
-    id: uuidv4(),
+    id: uuidv4(), 
     title,
     deadline: new Date(deadline),
     done: false,
