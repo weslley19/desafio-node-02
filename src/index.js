@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 
 const { v4: uuidv4, validate } = require('uuid');
+var validateUuid = require('uuid-validate');
 
 const app = express();
 app.use(express.json());
@@ -34,11 +35,46 @@ function checksCreateTodosUserAvailability(request, response, next) {
 }
 
 function checksTodoExists(request, response, next) {
-  // Complete aqui
+  const { username } = request.headers;
+  const { id } = request.params;
+
+  const user = users.find(user => user.username === username);
+  let todo = null;
+  
+  if (user) {
+    todo = user.todos.find(todo => todo.id === id);
+  }
+
+  if (!user) {
+    return response.status(404).json({ error: 'User not found'});
+  }
+
+  if (!validateUuid(id, 4)) {
+    return response.status(400);
+  }
+
+  if (!todo) {
+    return response.status(404)
+  }
+
+  request.user = user;
+  request.todo = todo;
+
+  return next();
 }
 
 function findUserById(request, response, next) {
-  // Complete aqui
+  const { id } = request.params;
+
+  const user = users.find(user => user.id === id);
+
+  if (!user) {
+    return response.status(404).json({ error: 'User not found' })
+  }
+
+  request.user = user;
+
+  return next()
 }
 
 app.post('/users', (request, response) => {
@@ -108,6 +144,10 @@ app.put('/todos/:id', checksTodoExists, (request, response) => {
   const { title, deadline } = request.body;
   const { todo } = request;
 
+  if (!todo) {
+    return response.status(404).json({ error: 'Todo not found' })
+  }
+
   todo.title = title;
   todo.deadline = new Date(deadline);
 
@@ -116,6 +156,10 @@ app.put('/todos/:id', checksTodoExists, (request, response) => {
 
 app.patch('/todos/:id/done', checksTodoExists, (request, response) => {
   const { todo } = request;
+
+  if (!todo) {
+    return response.status(404).json({ error: 'Todo not found' })
+  }
 
   todo.done = true;
 
